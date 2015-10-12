@@ -1,6 +1,7 @@
 package mind_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/bmizerany/assert"
@@ -22,7 +23,8 @@ func TestMind(t *testing.T) {
 		{{1, 1}, {0}},
 	})
 
-	m.Predict([][]float64{
+	prediction := m.Predict([][]float64{
 		{1, 0},
 	})
+	fmt.Println(prediction)
 }
