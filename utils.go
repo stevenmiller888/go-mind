@@ -26,11 +26,11 @@ func Normalize(examples [][][]float64) map[string]*matrix.DenseMatrix {
 
 // Normals returns a DenseMatrix filled with random values
 func Normals(rows, cols int) *matrix.DenseMatrix {
+	rand.Seed(time.Now().UTC().UnixNano())
 	ret := matrix.Zeros(rows, cols)
 
 	for i := 0; i < ret.Rows(); i++ {
 		for j := 0; j < ret.Cols(); j++ {
-			rand.Seed(time.Now().UTC().UnixNano())
 			ret.Set(i, j, rand.NormFloat64())
 		}
 	}
