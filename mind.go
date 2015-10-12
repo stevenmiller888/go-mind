@@ -7,7 +7,6 @@ const Version = "0.0.1"
 
 // Mind struct
 type Mind struct {
-	Activator    string                         // activation function, `sigmoid` or `htan`
 	LearningRate float64                        // speed the network will learn at
 	Iterations   int                            // number of training iterations
 	HiddenUnits  int                            // number of units in hidden layer
@@ -16,9 +15,8 @@ type Mind struct {
 }
 
 // New Mind
-func New(activator string, rate float64, iterations int, units int) *Mind {
+func New(rate float64, iterations int, units int) *Mind {
 	return &Mind{
-		Activator:    activator,
 		LearningRate: rate,
 		Iterations:   iterations,
 		HiddenUnits:  units,

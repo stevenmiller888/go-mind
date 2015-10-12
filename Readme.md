@@ -7,7 +7,7 @@ A neural network library built in Go.
 ```go
 import "github.com/stevenmiller888/mind"
 
-m := mind.New("sigmoid", 0.7, 10000, 2, 3)
+m := mind.New(0.7, 10000, 3)
 
 m.Learn([][][]float64{
 	{{0, 0}, {0}},
