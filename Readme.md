@@ -5,7 +5,7 @@ A neural network library built in Go.
 ## Usage
 
 ```go
-import "github.com/stevenmiller888/mind"
+import "github.com/stevenmiller888/go-mind"
 
 m := mind.New(0.7, 10000, 3)
 
