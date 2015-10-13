@@ -8,20 +8,16 @@ import (
 	"github.com/skelterjohn/go.matrix"
 )
 
-// Normalize the examples
-func Normalize(examples [][][]float64) map[string]*matrix.DenseMatrix {
+// Format the examples
+func Format(examples [][][]float64) (*matrix.DenseMatrix, *matrix.DenseMatrix) {
 	var output, input [][]float64
-	var ret = map[string]*matrix.DenseMatrix{}
 
 	for _, example := range examples {
 		output = append(output, example[1])
 		input = append(input, example[0])
 	}
 
-	ret["Output"] = matrix.MakeDenseMatrixStacked(output)
-	ret["Input"] = matrix.MakeDenseMatrixStacked(input)
-
-	return ret
+	return matrix.MakeDenseMatrixStacked(input), matrix.MakeDenseMatrixStacked(output)
 }
 
 // Normals returns a DenseMatrix filled with random values
