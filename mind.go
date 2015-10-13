@@ -47,7 +47,7 @@ func New(rate float64, iterations int, units int, activator string) *Mind {
 		m.Activate = Activator(Htan)
 		m.ActivatePrime = Activator(Htanprime)
 	default:
-		panic("unknown" + activator)
+		panic("unknown activator " + activator)
 	}
 
 	return m
