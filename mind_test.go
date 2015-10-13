@@ -8,9 +8,9 @@ import (
 )
 
 func TestMind(t *testing.T) {
-	m := mind.New(0.7, 10000, 3)
+	m := mind.New(0.3, 10000, 3, "sigmoid")
 
-	assert.Equal(t, m.LearningRate, 0.7)
+	assert.Equal(t, m.LearningRate, 0.3)
 	assert.Equal(t, m.Iterations, 10000)
 	assert.Equal(t, m.HiddenUnits, 3)
 
@@ -22,6 +22,6 @@ func TestMind(t *testing.T) {
 	})
 
 	m.Predict([][]float64{
-		{1, 0},
+		{0, 1},
 	})
 }

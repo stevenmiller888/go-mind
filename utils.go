@@ -8,7 +8,7 @@ import (
 	"github.com/skelterjohn/go.matrix"
 )
 
-// Format the examples
+// Format the examples.
 func Format(examples [][][]float64) (*matrix.DenseMatrix, *matrix.DenseMatrix) {
 	var output, input [][]float64
 
@@ -20,7 +20,7 @@ func Format(examples [][][]float64) (*matrix.DenseMatrix, *matrix.DenseMatrix) {
 	return matrix.MakeDenseMatrixStacked(input), matrix.MakeDenseMatrixStacked(output)
 }
 
-// Normals returns a DenseMatrix filled with random values
+// Normals returns a DenseMatrix filled with random values.
 func Normals(rows, cols int) *matrix.DenseMatrix {
 	rand.Seed(time.Now().UTC().UnixNano())
 	ret := matrix.Zeros(rows, cols)
@@ -34,36 +34,38 @@ func Normals(rows, cols int) *matrix.DenseMatrix {
 	return ret
 }
 
-// MatrixSigmoid calculates the sigmoid of each element in `m1`
-func MatrixSigmoid(m1 *matrix.DenseMatrix) *matrix.DenseMatrix {
-	for i := 0; i < m1.Rows(); i++ {
-		for j := 0; j < m1.Cols(); j++ {
-			val := m1.Get(i, j)
-			m1.Set(i, j, Sigmoid(val))
-		}
-	}
+// Activator returns the activation function.
+func Activator(f func(float64) float64) func(*matrix.DenseMatrix) *matrix.DenseMatrix {
+	return func(m *matrix.DenseMatrix) *matrix.DenseMatrix {
+		res := matrix.Zeros(m.Rows(), m.Cols())
 
-	return m1
+		for i := 0; i < m.Rows(); i++ {
+			for j := 0; j < m.Cols(); j++ {
+				val := m.Get(i, j)
+				res.Set(i, j, f(val))
+			}
+		}
+
+		return res
+	}
 }
 
-// Sigmoid calculates the sigmoid of `z`
+// Sigmoid calculates the sigmoid of `z`.
 func Sigmoid(z float64) float64 {
 	return 1 / (1 + math.Exp(-z))
 }
 
-// MatrixSigmoidPrime calculates the sigmoid prime of each element in `m1`
-func MatrixSigmoidPrime(m1 *matrix.DenseMatrix) *matrix.DenseMatrix {
-	for i := 0; i < m1.Rows(); i++ {
-		for j := 0; j < m1.Cols(); j++ {
-			val := m1.Get(i, j)
-			m1.Set(i, j, SigmoidPrime(val))
-		}
-	}
-
-	return m1
-}
-
-// SigmoidPrime calculates the sigmoid prime of `z`
+// SigmoidPrime calculates the sigmoid prime of `z`.
 func SigmoidPrime(z float64) float64 {
 	return Sigmoid(z) * (1 - Sigmoid(z))
+}
+
+// Htan calculates the hyperbolic tangent of `z`.
+func Htan(z float64) float64 {
+	return (math.Exp(2*z) - 1) / (math.Exp(2*z) + 1)
+}
+
+// Htanprime calculates the derivative of the hyperbolic tangent of `z`.
+func Htanprime(z float64) float64 {
+	return 1 - (math.Pow((math.Exp(2*z)-1)/(math.Exp(2*z)+1), 2))
 }
