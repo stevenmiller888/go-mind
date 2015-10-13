@@ -5,7 +5,7 @@ import "github.com/skelterjohn/go.matrix"
 // Version
 const Version = "0.0.1"
 
-// Mind struct
+// Mind represents the neural network
 type Mind struct {
 	LearningRate float64                        // speed the network will learn at
 	Iterations   int                            // number of training iterations
@@ -14,7 +14,7 @@ type Mind struct {
 	Results      map[string]*matrix.DenseMatrix // learning results
 }
 
-// New Mind
+// New mind loaded with `rate`, `iterations`, and `units`
 func New(rate float64, iterations int, units int) *Mind {
 	return &Mind{
 		LearningRate: rate,
@@ -39,7 +39,7 @@ func (m *Mind) Learn(examples [][][]float64) {
 	}
 }
 
-// Forward propagate
+// Forward propagate the examples through the network
 func (m *Mind) Forward(examples map[string]*matrix.DenseMatrix) {
 	m.Results["HiddenSum"] = matrix.Product(examples["Input"], m.Weights["InputHidden"])
 	m.Results["HiddenResult"] = MatrixSigmoid(m.Results["HiddenSum"])
@@ -47,7 +47,7 @@ func (m *Mind) Forward(examples map[string]*matrix.DenseMatrix) {
 	m.Results["OutputResult"] = MatrixSigmoid(m.Results["OutputSum"])
 }
 
-// Back propagate
+// Back propagate the error and update the weights
 func (m *Mind) Back(examples map[string]*matrix.DenseMatrix) {
 	ErrorOutputLayer := matrix.Difference(examples["Output"], m.Results["OutputResult"])
 
