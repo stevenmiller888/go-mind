@@ -73,8 +73,8 @@ func (m *Mind) Learn(examples [][][]float64) {
 
 // Forward propagate the examples through the network.
 func (m *Mind) Forward(input *mat64.Dense) {
-	mat64.NewDense(1, 1, nil)
-	mat64.NewDense(1, 1, nil).Product(input, m.Weights.InputHidden)
+
+	m.Results.HiddenSum.Product(input, m.Weights.InputHidden)
 	m.Results.HiddenResult = m.Activate(m.Results.HiddenSum)
 	m.Results.OutputSum = mat64.NewDense(1, 1, nil)
 	m.Results.OutputSum.Product(m.Results.HiddenResult, m.Weights.HiddenOutput)
@@ -85,19 +85,15 @@ func (m *Mind) Forward(input *mat64.Dense) {
 func (m *Mind) Back(input *mat64.Dense, output *mat64.Dense) {
 	ErrorOutputLayer := mat64.NewDense(1, 1, nil)
 	ErrorOutputLayer.Sub(output, m.Results.OutputResult)
-	//ElementMult
 	DeltaOutputLayer := m.ActivatePrime(m.Results.OutputSum)
 	DeltaOutputLayer.MulElem(DeltaOutputLayer, ErrorOutputLayer)
-	//
 	HiddenOutputChanges := mat64.NewDense(1, 1, nil)
 	HiddenOutputChanges.Product(m.Results.HiddenResult.T(), DeltaOutputLayer)
 	HiddenOutputChanges.Scale(m.LearningRate, HiddenOutputChanges)
 	m.Weights.HiddenOutput.Add(m.Weights.HiddenOutput, HiddenOutputChanges)
-	//ElementMult
 	DeltaHiddenLayer := mat64.NewDense(1, 1, nil)
 	DeltaHiddenLayer.Product(DeltaHiddenLayer, DeltaOutputLayer, m.Weights.HiddenOutput.T())
 	DeltaHiddenLayer.MulElem(DeltaHiddenLayer, m.ActivatePrime(m.Results.HiddenSum))
-	//
 	InputHiddenChanges := mat64.NewDense(1, 1, nil)
 	InputHiddenChanges.Product(InputHiddenChanges, input.T(), DeltaHiddenLayer)
 	InputHiddenChanges.Scale(m.LearningRate, InputHiddenChanges)
