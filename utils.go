@@ -1,32 +1,30 @@
 package mind
 
 import (
+	"github.com/gonum/matrix/mat64"
+	//"github.com/skelterjohn/go.matrix"
 	"math"
 	"math/rand"
 	"time"
-
-	"github.com/skelterjohn/go.matrix"
 )
 
 // Format the examples.
-func Format(examples [][][]float64) (*matrix.DenseMatrix, *matrix.DenseMatrix) {
+func Format(examples [][][]float64) (*mat64.Dense, *mat64.Dense) {
 	var output, input [][]float64
-
 	for _, example := range examples {
 		output = append(output, example[1])
 		input = append(input, example[0])
 	}
 
-	return matrix.MakeDenseMatrixStacked(input), matrix.MakeDenseMatrixStacked(output)
+	return MakeDenseMatrixStacked(input), MakeDenseMatrixStacked(output)
 }
 
-// Normals returns a DenseMatrix filled with random values.
-func Normals(rows, cols int) *matrix.DenseMatrix {
+// Normals returns a mat64.DenseMatrix filled with random values.
+func Normals(rows, cols int) *mat64.Dense {
 	rand.Seed(time.Now().UTC().UnixNano())
-	ret := matrix.Zeros(rows, cols)
-
-	for i := 0; i < ret.Rows(); i++ {
-		for j := 0; j < ret.Cols(); j++ {
+	ret := mat64.NewDense(rows, cols, nil)
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
 			ret.Set(i, j, rand.NormFloat64())
 		}
 	}
@@ -35,17 +33,16 @@ func Normals(rows, cols int) *matrix.DenseMatrix {
 }
 
 // Activator returns the activation function.
-func Activator(f func(float64) float64) func(*matrix.DenseMatrix) *matrix.DenseMatrix {
-	return func(m *matrix.DenseMatrix) *matrix.DenseMatrix {
-		res := matrix.Zeros(m.Rows(), m.Cols())
-
-		for i := 0; i < m.Rows(); i++ {
-			for j := 0; j < m.Cols(); j++ {
-				val := m.Get(i, j)
+func Activator(f func(float64) float64) func(*mat64.Dense) *mat64.Dense {
+	return func(m *mat64.Dense) *mat64.Dense {
+		r, c := m.Dims()
+		res := mat64.NewDense(r, c, nil)
+		for i := 0; i < r; i++ {
+			for j := 0; j < c; j++ {
+				val := m.At(i, j)
 				res.Set(i, j, f(val))
 			}
 		}
-
 		return res
 	}
 }
@@ -68,4 +65,16 @@ func Htan(z float64) float64 {
 // Htanprime calculates the derivative of the hyperbolic tangent of `z`.
 func Htanprime(z float64) float64 {
 	return 1 - (math.Pow((math.Exp(2*z)-1)/(math.Exp(2*z)+1), 2))
+}
+
+func MakeDenseMatrixStacked(input [][]float64) *mat64.Dense {
+	r := len(input)
+	c := len(input[0])
+	mat := mat64.NewDense(r, c, nil)
+	for i := 0; i < r; i++ {
+		for j := 0; j < c; j++ {
+			mat.Set(i, j, input[r][c])
+		}
+	}
+	return mat
 }
