@@ -2,6 +2,7 @@ package mind
 
 import (
 	"github.com/gonum/matrix/mat64"
+	"log"
 )
 
 // Version.
@@ -60,11 +61,14 @@ func (m *Mind) Learn(examples [][][]float64) {
 	input, output := Format(examples)
 
 	// Setup the weights
-	_, inputcols := input.RowView(0).Dims()
+	//This library uses Column-vectors, while rows are used for use in the Normals() function
+	//as a result, these two are switched.
+	inputcols, _ := input.RowView(0).Dims()
 	m.Weights.InputHidden = Normals(inputcols, m.HiddenUnits)
 	_, outputcols := output.Dims()
+	//log.Println("Output dims:", or, outputcols)
 	m.Weights.HiddenOutput = Normals(m.HiddenUnits, outputcols)
-
+	log.Println("outputcols: ", outputcols, "; HiddenUnits: ", m.HiddenUnits)
 	for i := 0; i < m.Iterations; i++ {
 		m.Forward(input)
 		m.Back(input, output)
@@ -72,12 +76,21 @@ func (m *Mind) Learn(examples [][][]float64) {
 }
 
 // Forward propagate the examples through the network.
-func (m *Mind) Forward(input *mat64.Dense) {
+func (m *Mind) Forward(in *mat64.Dense) {
+	input := mat64.DenseCopyOf(in)
+	m.Results.HiddenSum = mat64.NewDense(1, 1, nil)
 
-	m.Results.HiddenSum.Product(input, m.Weights.InputHidden)
+	ir, ic := input.Dims()
+	or, oc := m.Weights.InputHidden.Dims()
+	log.Println("input dims(r,c):", ir, ic)
+	log.Println("InputHidden dims(r,c):", or, oc)
+
+	input.Product(m.Weights.InputHidden)
+	m.Results.HiddenSum = mat64.DenseCopyOf(input)
 	m.Results.HiddenResult = m.Activate(m.Results.HiddenSum)
-	m.Results.OutputSum = mat64.NewDense(1, 1, nil)
-	m.Results.OutputSum.Product(m.Results.HiddenResult, m.Weights.HiddenOutput)
+	//m.Results.OutputSum = mat64.NewDense(1, 1, nil)
+	m.Results.HiddenResult.Product(m.Weights.HiddenOutput)
+	m.Results.OutputSum = mat64.DenseCopyOf(m.Results.HiddenResult)
 	m.Results.OutputResult = m.Activate(m.Results.OutputSum)
 }
 
@@ -87,15 +100,18 @@ func (m *Mind) Back(input *mat64.Dense, output *mat64.Dense) {
 	ErrorOutputLayer.Sub(output, m.Results.OutputResult)
 	DeltaOutputLayer := m.ActivatePrime(m.Results.OutputSum)
 	DeltaOutputLayer.MulElem(DeltaOutputLayer, ErrorOutputLayer)
-	HiddenOutputChanges := mat64.NewDense(1, 1, nil)
-	HiddenOutputChanges.Product(m.Results.HiddenResult.T(), DeltaOutputLayer)
+
+	HiddenOutputChanges := mat64.DenseCopyOf(m.Results.HiddenResult.T())
+	HiddenOutputChanges.Product(DeltaOutputLayer)
 	HiddenOutputChanges.Scale(m.LearningRate, HiddenOutputChanges)
 	m.Weights.HiddenOutput.Add(m.Weights.HiddenOutput, HiddenOutputChanges)
-	DeltaHiddenLayer := mat64.NewDense(1, 1, nil)
-	DeltaHiddenLayer.Product(DeltaHiddenLayer, DeltaOutputLayer, m.Weights.HiddenOutput.T())
+
+	DeltaHiddenLayer := mat64.DenseCopyOf(DeltaOutputLayer)
+	DeltaHiddenLayer.Product(DeltaOutputLayer, m.Weights.HiddenOutput.T())
 	DeltaHiddenLayer.MulElem(DeltaHiddenLayer, m.ActivatePrime(m.Results.HiddenSum))
-	InputHiddenChanges := mat64.NewDense(1, 1, nil)
-	InputHiddenChanges.Product(InputHiddenChanges, input.T(), DeltaHiddenLayer)
+
+	InputHiddenChanges := mat64.DenseCopyOf(input.T())
+	InputHiddenChanges.Product(DeltaHiddenLayer)
 	InputHiddenChanges.Scale(m.LearningRate, InputHiddenChanges)
 	m.Weights.InputHidden.Add(m.Weights.InputHidden, InputHiddenChanges)
 }

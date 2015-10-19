@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/stevenmiller888/go-mind"
+	"github.com/vibbix/go-mind"
 	"image"
 	_ "image/png"
 	"log"
@@ -57,6 +57,7 @@ func ReadImage(letter string) []float64 {
 	}
 	bounds := img.Bounds()
 	flt := make([]float64, ((bounds.Max.Y - bounds.Min.Y) * (bounds.Max.X - bounds.Min.X) * 4))
+	//log.Println("letter ", letter, " info: max-", bounds.Max, " ; min-", bounds.Min)
 	i := -1 //starts at negative, to iterate
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
@@ -71,5 +72,6 @@ func ReadImage(letter string) []float64 {
 			flt[i] = (float64(a) / 255.0)
 		}
 	}
+	//log.Println("size of letter ", letter, ":", len(flt))
 	return flt
 }

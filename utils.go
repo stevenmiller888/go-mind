@@ -3,20 +3,38 @@ package mind
 import (
 	"github.com/gonum/matrix/mat64"
 	//"github.com/skelterjohn/go.matrix"
+	//"fmt"
 	"math"
 	"math/rand"
 	"time"
 )
 
 // Format the examples.
-func Format(examples [][][]float64) (*mat64.Dense, *mat64.Dense) {
-	var output, input [][]float64
-	for _, example := range examples {
-		output = append(output, example[1])
-		input = append(input, example[0])
+func Format(examples [][][]float64) (in *mat64.Dense, out *mat64.Dense) {
+	/*fmt.Println("Length of examples: ", len(examples))
+	fmt.Println("Length of items within examples: ", len(examples[0]))
+	fmt.Println("Length of input of items within examples", len(examples[0][0]))
+	fmt.Println("Length of output of items within examples", len(examples[0][1]))
+	*/
+	input := make([][]float64, len(examples[0])) //, len(examples[0][0]))
+	for i := 0; i < len(input); i++ {
+		input[i] = make([]float64, len(examples[0][0]))
 	}
 
-	return MakeDenseMatrixStacked(input), MakeDenseMatrixStacked(output)
+	output := make([][]float64, len(examples[0])) //, len(examples[0][1]))
+	for i := 0; i < len(output); i++ {
+		output[i] = make([]float64, len(examples[0][1]))
+	}
+
+	for _, example := range examples {
+		//fmt.Println("length of example(in): ", len(example[0]))
+		//fmt.Println("length of example(out): ", len(example[1]))
+		input = append(input, example[0])
+		output = append(output, example[1])
+	}
+	in = MakeDenseMatrixStacked(input)
+	out = MakeDenseMatrixStacked(output)
+	return in, out
 }
 
 // Normals returns a mat64.DenseMatrix filled with random values.
@@ -28,7 +46,6 @@ func Normals(rows, cols int) *mat64.Dense {
 			ret.Set(i, j, rand.NormFloat64())
 		}
 	}
-
 	return ret
 }
 
@@ -68,13 +85,23 @@ func Htanprime(z float64) float64 {
 }
 
 func MakeDenseMatrixStacked(input [][]float64) *mat64.Dense {
+	//for i := 0; i < len(input); i++ {
+	//	fmt.Println("Row number: ", i, "; number of items in row: ", len(input[i]))
+	//}
+	//fmt.Println("# of rows:", len(input))
+	//fmt.Println("# of columns: ", len(input[0]))
 	r := len(input)
 	c := len(input[0])
 	mat := mat64.NewDense(r, c, nil)
 	for i := 0; i < r; i++ {
-		for j := 0; j < c; j++ {
-			mat.Set(i, j, input[r][c])
-		}
+		//for j := 0; j < c; j++ {
+		//	//_, ok := input[r][c]
+		//	//if ok == false {
+		//	fmt.Printf("Out of bounds at row %d, column %d", i, j)
+		//	mat.Set(i, j, input[i][j])
+		//}
+		//fmt.Println("row ", i, "; length: ", len(input[i]))
+		mat.SetRow(i, input[i])
 	}
 	return mat
 }
