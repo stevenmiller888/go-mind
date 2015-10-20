@@ -5,28 +5,31 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/skelterjohn/go.matrix"
+	"github.com/gonum/matrix/mat64"
 )
 
 // Format the examples.
-func Format(examples [][][]float64) (*matrix.DenseMatrix, *matrix.DenseMatrix) {
-	var output, input [][]float64
+func Format(examples [][][]float64) (*mat64.Dense, *mat64.Dense) {
+	var input, output []float64
+	rows := len(examples)
+	inCols := len(examples[0][0])
+	outCols := len(examples[0][1])
 
 	for _, example := range examples {
-		output = append(output, example[1])
-		input = append(input, example[0])
+		output = append(output, example[1]...)
+		input = append(input, example[0]...)
 	}
 
-	return matrix.MakeDenseMatrixStacked(input), matrix.MakeDenseMatrixStacked(output)
+	return mat64.NewDense(rows, inCols, input), mat64.NewDense(rows, outCols, output)
 }
 
 // Normals returns a DenseMatrix filled with random values.
-func Normals(rows, cols int) *matrix.DenseMatrix {
+func Normals(rows, cols int) *mat64.Dense {
 	rand.Seed(time.Now().UTC().UnixNano())
-	ret := matrix.Zeros(rows, cols)
+	ret := mat64.NewDense(rows, cols, nil)
 
-	for i := 0; i < ret.Rows(); i++ {
-		for j := 0; j < ret.Cols(); j++ {
+	for i := 0; i < rows; i++ {
+		for j := 0; j < cols; j++ {
 			ret.Set(i, j, rand.NormFloat64())
 		}
 	}
@@ -35,13 +38,14 @@ func Normals(rows, cols int) *matrix.DenseMatrix {
 }
 
 // Activator returns the activation function.
-func Activator(f func(float64) float64) func(*matrix.DenseMatrix) *matrix.DenseMatrix {
-	return func(m *matrix.DenseMatrix) *matrix.DenseMatrix {
-		res := matrix.Zeros(m.Rows(), m.Cols())
+func Activator(f func(float64) float64) func(*mat64.Dense) *mat64.Dense {
+	return func(m *mat64.Dense) *mat64.Dense {
+		rows, cols := m.Dims()
+		res := mat64.NewDense(rows, cols, nil)
 
-		for i := 0; i < m.Rows(); i++ {
-			for j := 0; j < m.Cols(); j++ {
-				val := m.Get(i, j)
+		for i := 0; i < rows; i++ {
+			for j := 0; j < cols; j++ {
+				val := m.At(i, j)
 				res.Set(i, j, f(val))
 			}
 		}

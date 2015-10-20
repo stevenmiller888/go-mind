@@ -1,34 +1,34 @@
 package mind
 
-import "github.com/skelterjohn/go.matrix"
+import "github.com/gonum/matrix/mat64"
 
 // Version.
 const Version = "0.0.1"
 
 // Mind represents the neural network.
 type Mind struct {
-	LearningRate  float64                                       // speed the network will learn at
-	Iterations    int                                           // number of training iterations
-	HiddenUnits   int                                           // number of units in hidden layer
-	Activate      func(*matrix.DenseMatrix) *matrix.DenseMatrix // activation function
-	ActivatePrime func(*matrix.DenseMatrix) *matrix.DenseMatrix // derivative of activation function
-	Weights                                                     // learning weights
-	Results                                                     // learning results
+	LearningRate  float64                         // speed the network will learn at
+	Iterations    int                             // number of training iterations
+	HiddenUnits   int                             // number of units in hidden layer
+	Activate      func(*mat64.Dense) *mat64.Dense // activation function
+	ActivatePrime func(*mat64.Dense) *mat64.Dense // derivative of activation function
+	Weights                                       // learning weights
+	Results                                       // learning results
 }
 
 // Weights represents the connections between units.
 type Weights struct {
-	InputHidden  *matrix.DenseMatrix
-	HiddenOutput *matrix.DenseMatrix
+	InputHidden  *mat64.Dense
+	HiddenOutput *mat64.Dense
 }
 
 // Results represents, at a given unit, the output of multiplying
 // the inputs and weights in all previous layers.
 type Results struct {
-	HiddenSum    *matrix.DenseMatrix
-	HiddenResult *matrix.DenseMatrix
-	OutputSum    *matrix.DenseMatrix
-	OutputResult *matrix.DenseMatrix
+	HiddenSum    *mat64.Dense
+	HiddenResult *mat64.Dense
+	OutputSum    *mat64.Dense
+	OutputResult *mat64.Dense
 }
 
 // New mind loaded with `rate`, `iterations`, and `units`.
@@ -56,10 +56,12 @@ func New(rate float64, iterations int, units int, activator string) *Mind {
 // Learn from examples.
 func (m *Mind) Learn(examples [][][]float64) {
 	input, output := Format(examples)
+	_, inCols := input.Dims()
+	_, outCols := output.Dims()
 
 	// Setup the weights
-	m.Weights.InputHidden = Normals(input.GetRowVector(0).Cols(), m.HiddenUnits)
-	m.Weights.HiddenOutput = Normals(m.HiddenUnits, output.Cols())
+	m.Weights.InputHidden = Normals(inCols, m.HiddenUnits)
+	m.Weights.HiddenOutput = Normals(m.HiddenUnits, outCols)
 
 	for i := 0; i < m.Iterations; i++ {
 		m.Forward(input)
@@ -68,30 +70,48 @@ func (m *Mind) Learn(examples [][][]float64) {
 }
 
 // Forward propagate the examples through the network.
-func (m *Mind) Forward(input *matrix.DenseMatrix) {
-	m.Results.HiddenSum = matrix.Product(input, m.Weights.InputHidden)
-	m.Results.HiddenResult = m.Activate(m.Results.HiddenSum)
-	m.Results.OutputSum = matrix.Product(m.Results.HiddenResult, m.Weights.HiddenOutput)
-	m.Results.OutputResult = m.Activate(m.Results.OutputSum)
+func (m *Mind) Forward(input *mat64.Dense) {
+	HiddenSum := &mat64.Dense{}
+	OutputSum := &mat64.Dense{}
+
+	HiddenSum.Mul(input, m.Weights.InputHidden)
+	m.Results.HiddenResult = m.Activate(HiddenSum)
+	OutputSum.Mul(m.Results.HiddenResult, m.Weights.HiddenOutput)
+	m.Results.OutputResult = m.Activate(OutputSum)
+
+	m.Results.HiddenSum = HiddenSum
+	m.Results.OutputSum = OutputSum
 }
 
 // Back propagate the error and update the weights.
-func (m *Mind) Back(input *matrix.DenseMatrix, output *matrix.DenseMatrix) {
-	ErrorOutputLayer := matrix.Difference(output, m.Results.OutputResult)
+func (m *Mind) Back(input *mat64.Dense, output *mat64.Dense) {
+	ErrorOutputLayer := &mat64.Dense{}
+	DeltaOutputLayer := &mat64.Dense{}
+	HiddenOutputChanges := &mat64.Dense{}
+	DeltaHiddenLayer := &mat64.Dense{}
+	InputHiddenChanges := &mat64.Dense{}
 
-	DeltaOutputLayer, _ := m.ActivatePrime(m.Results.OutputSum).ElementMult(ErrorOutputLayer)
-	HiddenOutputChanges := matrix.Product(m.Results.HiddenResult.Transpose(), DeltaOutputLayer)
-	HiddenOutputChanges.Scale(m.LearningRate)
-	m.Weights.HiddenOutput.Add(HiddenOutputChanges)
+	ErrorOutputLayer.Sub(output, m.Results.OutputResult)
+	DeltaOutputLayer.MulElem(m.ActivatePrime(m.Results.OutputSum), ErrorOutputLayer)
+	HiddenOutputChanges.Mul(m.Results.HiddenResult.T(), DeltaOutputLayer)
+	HiddenOutputChanges.Scale(m.LearningRate, HiddenOutputChanges)
+	m.Weights.HiddenOutput.Add(HiddenOutputChanges, m.Weights.HiddenOutput)
 
-	DeltaHiddenLayer, _ := matrix.Product(DeltaOutputLayer, m.Weights.HiddenOutput.Transpose()).ElementMult(m.ActivatePrime(m.Results.HiddenSum))
-	InputHiddenChanges := matrix.Product(input.Transpose(), DeltaHiddenLayer)
-	InputHiddenChanges.Scale(m.LearningRate)
-	m.Weights.InputHidden.Add(InputHiddenChanges)
+	DeltaHiddenLayer.Mul(DeltaOutputLayer, m.Weights.HiddenOutput.T())
+	DeltaHiddenLayer.MulElem(m.ActivatePrime(m.Results.HiddenSum), DeltaHiddenLayer)
+	InputHiddenChanges.Mul(input.T(), DeltaHiddenLayer)
+	InputHiddenChanges.Scale(m.LearningRate, InputHiddenChanges)
+	m.Weights.InputHidden.Add(InputHiddenChanges, m.Weights.InputHidden)
 }
 
 // Predict from input.
-func (m *Mind) Predict(input [][]float64) *matrix.DenseMatrix {
-	m.Forward(matrix.MakeDenseMatrixStacked(input))
+func (m *Mind) Predict(input [][]float64) *mat64.Dense {
+	var in []float64
+
+	for _, i := range input {
+		in = append(in, i...)
+	}
+
+	m.Forward(mat64.NewDense(len(input), len(input[0]), in))
 	return m.Results.OutputResult
 }
