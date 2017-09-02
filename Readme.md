@@ -24,3 +24,7 @@ m.Predict([][]float64{
 ## Note
 
 Just built this to learn a little Go. Feedback welcome :)
+
+## License
+
+MIT
